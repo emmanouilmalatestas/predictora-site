@@ -1,0 +1,62 @@
+name: PredictoraOS Production CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run backend tests
+        run: |
+          pytest -q
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build backend image
+        run: |
+          docker build -t predictora-backend:latest .
+
+      - name: Push backend image
+        run: |
+          docker tag predictora-backend:latest ${{ secrets.DOCKERHUB_USERNAME }}/predictora-backend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/predictora-backend:latest
+
+  deploy-production:
+    needs: build-backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Load production kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG_PROD }}" > kubeconfig
+          chmod 600 kubeconfig
+
+      - name: Apply production manifests
+        run: |
+          KUBECONFIG=./kubeconfig kubectl apply -f k8s/
