@@ -1,3 +1,5 @@
+on:
+  workflow_dispatch:
 name: Deploy to PredictoraAI Prod
 
 on:
