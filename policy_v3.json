@@ -1,0 +1,66 @@
+{
+  "kyc": {
+    "min_age": 18
+  },
+  "aml": {
+    "max_transaction": 6800,
+    "high_risk_countries": ["IR", "RU", "AF", "SY"],
+    "structuring_threshold": 6400,
+    "daily_volume_limit": 25000,
+    "high_risk_amount_threshold": 4200,
+    "suspicious_patterns": ["round_numbers", "split_payments", "burst_activity"],
+    "layering_depth_limit": 2,
+    "circular_flow_detection": true,
+    "ml_anomaly_threshold": 0.72
+  },
+  "sanctions": {
+    "blocked_countries": ["IR", "RU", "AF", "SY"],
+    "blocked_names": ["kadyrov", "basayev"],
+    "lists": {
+      "ofac_sdn": [],
+      "eu_consolidated": []
+    },
+    "ml_name_similarity_threshold": 0.83
+  },
+  "fraud": {
+    "velocity_limit": 7,
+    "max_transactions_per_hour": 12,
+    "max_amount_per_hour": 12000,
+    "device_risk": {
+      "default": 0.5,
+      "rooted_device": 0.85,
+      "vpn_detected": 0.75,
+      "tor_detected": 0.92
+    },
+    "behavior_risk": {
+      "default": 0.5,
+      "night_activity": 0.75,
+      "new_device": 0.65,
+      "location_jump": 0.82,
+      "ml_behavior_score_threshold": 0.78
+    }
+  },
+  "risk": {
+    "base_score": 0.5,
+    "country_weights": {
+      "CY": 0.38,
+      "GR": 0.38,
+      "DE": 0.32,
+      "US": 0.52,
+      "IR": 0.92,
+      "RU": 0.88,
+      "AF": 0.96,
+      "SY": 0.96
+    },
+    "segment_weights": {
+      "premium": 0.28,
+      "standard": 0.52,
+      "high_risk": 0.82,
+      "new_user": 0.62
+    },
+    "aml_weight": 0.37,
+    "fraud_weight": 0.37,
+    "sanctions_weight": 0.26,
+    "ml_weight": 0.42
+  }
+}

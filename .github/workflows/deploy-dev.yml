@@ -1,0 +1,45 @@
+name: Deploy to Dev
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Load kubeconfig (Dev)
+        run: |
+          echo "${{ secrets.KUBECONFIG_DEV }}" > kubeconfig
+          export KUBECONFIG=$PWD/kubeconfig
+
+      - name: Diagnose Kubernetes connectivity
+        run: |
+          echo "🔍 Using KUBECONFIG: $KUBECONFIG"
+          kubectl config current-context || echo "⚠️ No current context"
+          kubectl config view --minify --raw=false || echo "⚠️ Could not view config"
+
+          echo "🔌 Testing TCP connectivity to Kubernetes API..."
+          timeout 10 bash -c '</dev/tcp/62.238.34.36/6444' \
+            && echo "✅ TCP 6443 reachable" \
+            || echo "❌ TCP 6443 NOT reachable"
+
+          echo "🌐 Testing HTTPS handshake..."
+          curl -vk --connect-timeout 10 https://62.238.34.36:6443/version || echo "❌ HTTPS handshake failed"
+
+      - name: Deploy backend (Dev)
+        run: |
+          echo "🚀 Deploying backend to Dev..."
+          kubectl apply -f k8s/backend-dev.yaml
+          echo "✅ Deployment applied"

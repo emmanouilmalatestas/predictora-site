@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: predictora-backend
+  namespace: predictora
+spec:
+  template:
+    metadata:
+      labels:
+        app: predictora-backend
+    spec:
+      containers:
+        - name: predictora-backend
+          image: predictoraai-backend:prod
+          imagePullPolicy: IfNotPresent

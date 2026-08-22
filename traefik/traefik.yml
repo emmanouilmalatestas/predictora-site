@@ -1,0 +1,40 @@
+log:
+  level: INFO
+
+api:
+  dashboard: true
+  insecure: false
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+
+  websecure:
+    address: ":443"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: predictoraai_backend_internal
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "admin@predictoraai.com"
+      storage: "/acme/acme.json"
+      httpChallenge:
+        entryPoint: web
+
+  staging:
+    acme:
+      email: "admin@predictoraai.com"
+      storage: "/acme/staging.json"
+      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      httpChallenge:
+        entryPoint: web

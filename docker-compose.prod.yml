@@ -1,0 +1,319 @@
+name: predictoraai
+
+services:
+  predictoraai-db:
+    image: postgres:16.3
+    container_name: predictoraai-db
+
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+    networks:
+      - backend_internal
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  predictora-redis:
+    image: redis:7-alpine
+    container_name: predictora-redis
+
+    command: ["redis-server", "--appendonly", "yes"]
+
+    volumes:
+      - redis_data:/data
+
+    networks:
+      - backend_internal
+
+    restart: always
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  predictora-backend:
+    build:
+      context: /home/deploy/predictoraai/backend
+      dockerfile: app/Dockerfile
+    image: predictoraai-backend:prod
+
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4 --proxy-headers --forwarded-allow-ips="*"
+
+    env_file:
+      - /home/deploy/predictoraai/.env
+
+    environment:
+      - PREDICTORA_DATABASE_DSN=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@predictoraai-db:5432/${POSTGRES_DB}
+      - PREDICTORA_REDIS_DSN=redis://predictora-redis:6379
+      - PREDICTORA_ENV=prod
+      - PREDICTORA_RUNTIME_MODE=production
+      - PREDICTORA_BASELINE_REVENUE=1000.0
+      - STRIPE_API_KEY=${STRIPE_API_KEY}
+
+    restart: always
+
+    networks:
+      - backend_internal
+      - default
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.predictora-backend.rule=Host(`api.predictoraai.com`)"
+      - "traefik.http.routers.predictora-backend.entrypoints=websecure"
+      - "traefik.http.routers.predictora-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.predictora-backend.loadbalancer.server.port=8000"
+      - "traefik.docker.network=predictoraai_backend_internal"
+      - "autoheal=true"
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  predictoraai-frontend:
+    build:
+      context: /home/deploy/predictoraai/predictora-frontend
+      dockerfile: Dockerfile
+    image: predictoraai-frontend:latest
+    container_name: predictoraai-frontend
+    ports:
+      - "3000:3000"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.frontend.rule: Host(`predictoraai.com`) || Host(`www.predictoraai.com`)
+      traefik.http.routers.frontend.entrypoints: websecure
+      traefik.http.routers.frontend.tls.certresolver: letsencrypt
+      traefik.http.services.frontend.loadbalancer.server.port: "3000"
+    networks:
+      - default
+      - backend_internal
+    restart: always
+
+  predictoraai-admin-frontend:
+    build:
+      context: /home/deploy/predictoraai/apps/admin
+      dockerfile: Dockerfile
+    image: predictoraai-admin-frontend:latest
+    container_name: predictoraai-admin-frontend
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.admin.rule: Host(`admin.predictoraai.com`)
+      traefik.http.routers.admin.entrypoints: websecure
+      traefik.http.routers.admin.tls.certresolver: letsencrypt
+      traefik.http.services.admin.loadbalancer.server.port: "3000"
+    networks:
+      - default
+      - backend_internal
+    restart: always
+
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    restart: always
+    user: "0:0"
+
+    entrypoint: ["traefik"]
+
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.file=true
+      - --providers.file.filename=/etc/traefik/traefik_dynamic.yml
+      - --providers.file.watch=true
+
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.letsencrypt.acme.email=emmanouilmalatestas@gmail.com
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+
+      - --api.dashboard=true
+      - --api.insecure=false
+
+      - --log.level=INFO
+      - --accesslog=true
+      - --accesslog.format=json
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/deploy/predictoraai/traefik_dynamic.yml:/etc/traefik/traefik_dynamic.yml:ro
+      - /home/deploy/predictoraai/letsencrypt:/letsencrypt
+
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+
+    networks:
+      - default
+      - backend_internal
+
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    networks:
+      - default
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.listen-address=0.0.0.0:9090"
+    volumes:
+      - /home/deploy/predictoraai/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - /home/deploy/predictoraai/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    networks:
+      - default
+    restart: always
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox-exporter
+    ports:
+      - "9115:9115"
+    networks:
+      - default
+    restart: always
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - default
+    restart: always
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: loki
+    volumes:
+      - loki-data:/loki
+      - /home/deploy/predictoraai/monitoring/loki-config.yml:/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - default
+    restart: always
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: promtail
+    volumes:
+      - /var/log:/var/log
+      - /home/deploy/predictoraai/monitoring/promtail-config.yml:/etc/promtail/config.yml
+    networks:
+      - default
+    restart: always
+
+  revenue-exporter:
+    build:
+      context: /home/deploy/predictoraai/monitoring/revenue-exporter
+      dockerfile: Dockerfile
+    container_name: revenue-exporter
+    networks:
+      - default
+    restart: always
+
+  autoheal-worker:
+    build:
+      context: /home/deploy/predictoraai/services/autoheal-worker
+      dockerfile: Dockerfile
+    container_name: autoheal-worker
+
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=autoheal
+      - AUTOHEAL_MODE=production
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - default
+    restart: always
+
+  guardian-v2:
+    build:
+      context: /home/deploy/predictoraai/services/guardian-v2
+      dockerfile: Dockerfile
+    container_name: guardian-v2
+    environment:
+      - GUARDIAN_MODE=production
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - default
+      - backend_internal
+    extra_hosts:
+      - "prometheus:host-gateway"
+    restart: always
+
+  predictora-ui:
+    build:
+      context: /home/deploy/predictoraai/ui/policy-dashboard
+      dockerfile: Dockerfile
+    image: predictora-ui:prod
+    container_name: predictora-ui
+    networks:
+      - default
+      - backend_internal
+    restart: always
+
+networks:
+  backend_internal:
+    name: predictoraai_backend_internal
+    driver: bridge
+
+  default:
+    driver: bridge
+
+volumes:
+  db-data:
+    name: predictoraai_db-data
+  redis_data:
+    name: predictoraai_redis_data
+  loki-data:
+    name: predictoraai_loki-data
+  prometheus-data:
+    name: prometheus

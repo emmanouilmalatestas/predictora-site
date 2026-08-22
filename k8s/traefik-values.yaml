@@ -1,0 +1,11 @@
+api:
+  dashboard: true
+
+additionalArguments:
+  - "--api.insecure=true"
+
+ports:
+  admin:
+    port: 8080
+    expose: true
+    protocol: TCP

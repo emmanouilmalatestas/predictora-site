@@ -1,0 +1,101 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: predictora-db
+    environment:
+      POSTGRES_DB: predictora
+      POSTGRES_USER: predictora
+      POSTGRES_PASSWORD: predictora
+    volumes:
+      - ../..//postgres-data:/var/lib/postgresql/data
+    networks:
+      - warzone
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U predictora -d predictora"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ../../services/api
+      dockerfile: Dockerfile
+    container_name: predictora-api
+    command: >
+      uvicorn src.main:app
+      --host 0.0.0.0
+      --port 8000
+    environment:
+      PG_USER: predictora
+      PG_PASSWORD: predictora
+      PG_DB: predictora
+      PG_HOST: db
+      PG_PORT: 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - warzone
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.predictora.ai`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=cf"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
+
+  admin:
+    build:
+      context: ../../apps/admin
+      dockerfile: Dockerfile
+    container_name: predictora-admin
+    networks:
+      - warzone
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin.rule=Host(`admin.predictora.ai`)"
+      - "traefik.http.routers.admin.entrypoints=websecure"
+      - "traefik.http.routers.admin.tls.certresolver=cf"
+      - "traefik.http.services.admin.loadbalancer.server.port=3000"
+
+  client:
+    build:
+      context: ../../apps/client
+      dockerfile: Dockerfile
+    container_name: predictora-client
+    networks:
+      - warzone
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.client.rule=Host(`predictora.ai`)"
+      - "traefik.http.routers.client.entrypoints=websecure"
+      - "traefik.http.routers.client.tls.certresolver=cf"
+      - "traefik.http.services.client.loadbalancer.server.port=3000"
+
+  traefik:
+    image: traefik:v3.0
+    container_name: predictora-traefik
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@predictora.ai"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../../traefik/letsencrypt:/letsencrypt
+      - ../../traefik/traefik.yml:/traefik.yml:ro
+      - ../../traefik/dynamic:/dynamic:ro
+    networks:
+      - warzone
+
+networks:
+  warzone:
+    driver: bridge

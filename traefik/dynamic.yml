@@ -1,0 +1,51 @@
+http:
+  routers:
+
+    traefik:
+      rule: Host(`traefik.predictoraai.com`)
+      entryPoints:
+        - websecure
+      service: api@internal
+      tls:
+        certResolver: letsencrypt
+
+    predictora-backend:
+      rule: Host(`api.predictoraai.com`)
+      entryPoints:
+        - websecure
+      service: predictora-backend-service
+      tls:
+        certResolver: letsencrypt
+
+    predictora-frontend:
+      rule: Host(`predictoraai.com`)
+      entryPoints:
+        - websecure
+      service: predictora-frontend-service
+      tls:
+        certResolver: letsencrypt
+
+    predictora-ui:
+      rule: Host(`ui.predictoraai.com`)
+      entryPoints:
+        - websecure
+      service: predictora-ui-service
+      tls:
+        certResolver: letsencrypt
+
+  services:
+
+    predictora-backend-service:
+      loadBalancer:
+        servers:
+          - url: "http://predictora-backend:8000"
+
+    predictora-frontend-service:
+      loadBalancer:
+        servers:
+          - url: "http://predictora-frontend:3000"
+
+    predictora-ui-service:
+      loadBalancer:
+        servers:
+          - url: "http://predictora-ui:3000"

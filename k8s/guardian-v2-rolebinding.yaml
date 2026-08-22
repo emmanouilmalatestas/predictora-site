@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: guardian-v2-binding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: guardian-v2
+  namespace: default
+roleRef:
+  kind: Role
+  name: guardian-v2-role
+  apiGroup: rbac.authorization.k8s.io

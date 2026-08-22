@@ -1,0 +1,153 @@
+http:
+  routers:
+
+    # ---------------------------------------------------------
+    # 1. HTTP → HTTPS redirect (global)
+    # ---------------------------------------------------------
+    redirect-to-https:
+      entryPoints: ["web"]
+      rule: "HostRegexp(`{host:.+}`)"
+      middlewares: ["redirect-to-https"]
+      service: "noop"
+
+    # ---------------------------------------------------------
+    # 2. Canonical redirect: www → non-www
+    # ---------------------------------------------------------
+    canonical-www:
+      entryPoints: ["websecure"]
+      rule: "Host(`www.predictoraai.com`)"
+      middlewares: ["redirect-to-root"]
+      service: "noop"
+      tls:
+        certResolver: "letsencrypt"
+
+    # ---------------------------------------------------------
+    # 3. Frontend (predictoraai.com)
+    # ---------------------------------------------------------
+    frontend:
+      entryPoints: ["websecure"]
+      rule: "Host(`predictoraai.com`)"
+      tls:
+        certResolver: "letsencrypt"
+      service: "frontend-service"
+      middlewares:
+        - "security-headers"
+        - "compression"
+
+    # ---------------------------------------------------------
+    # 4. Backend API (api.predictoraai.com)
+    # ---------------------------------------------------------
+    backend-subdomain:
+      entryPoints: ["websecure"]
+      rule: "Host(`api.predictoraai.com`)"
+      tls:
+        certResolver: "letsencrypt"
+      service: "backend-service"
+      middlewares:
+        - "security-headers"
+        - "compression"
+
+    # ---------------------------------------------------------
+    # 5. Admin panel (admin.predictoraai.com)
+    # ---------------------------------------------------------
+    admin:
+      entryPoints: ["websecure"]
+      rule: "Host(`admin.predictoraai.com`)"
+      tls:
+        certResolver: "letsencrypt"
+      service: "admin-service"
+      middlewares:
+        - "security-headers"
+        - "compression"
+
+    # ---------------------------------------------------------
+    # 6. UI dashboard (ui.predictoraai.com)
+    # ---------------------------------------------------------
+    ui:
+      entryPoints: ["websecure"]
+      rule: "Host(`ui.predictoraai.com`)"
+      tls:
+        certResolver: "letsencrypt"
+      service: "ui-service"
+      middlewares:
+        - "security-headers"
+        - "compression"
+
+    # ---------------------------------------------------------
+    # 7. Stripe webhook (webhook.predictoraai.com)
+    # ---------------------------------------------------------
+    webhook:
+      entryPoints: ["websecure"]
+      rule: "Host(`webhook.predictoraai.com`)"
+      tls:
+        certResolver: "letsencrypt"
+      service: "webhook-service"
+      middlewares:
+        - "security-headers"
+        - "compression"
+
+  # ---------------------------------------------------------
+  # Middlewares
+  # ---------------------------------------------------------
+  middlewares:
+
+    redirect-to-https:
+      redirectRegex:
+        regex: "^http://(.*)/(?!.well-known/acme-challenge)(.*)"
+        replacement: "https://$1/$2"
+        permanent: true
+
+    redirect-to-root:
+      redirectRegex:
+        regex: "^https://www.predictoraai.com/(.*)"
+        replacement: "https://predictoraai.com/$1"
+        permanent: true
+
+    compression:
+      compress: {}
+
+    security-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "no-referrer"
+        permissionsPolicy: "geolocation=(), microphone=(), camera=()"
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        stsPreload: true
+
+  # ---------------------------------------------------------
+  # Services
+  # ---------------------------------------------------------
+  services:
+
+    frontend-service:
+      loadBalancer:
+        servers:
+          - url: "http://predictoraai-frontend:3000"
+
+    backend-service:
+      loadBalancer:
+        servers:
+          - url: "http://predictora-backend:8000"
+
+    admin-service:
+      loadBalancer:
+        servers:
+          - url: "http://predictoraai-admin-frontend:3000"
+
+    ui-service:
+      loadBalancer:
+        servers:
+          - url: "http://predictora-ui:80"
+
+    webhook-service:
+      loadBalancer:
+        servers:
+          - url: "http://predictoraai-stripe-webhook:8000"
+
+    noop:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1"

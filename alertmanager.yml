@@ -1,0 +1,93 @@
+global:
+  resolve_timeout: 5m
+
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@predictora.ai'
+  smtp_auth_username: 'alerts@predictora.ai'
+  smtp_auth_password: 'YOUR_SMTP_PASSWORD'
+
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'instance']
+  group_wait: 10s
+  group_interval: 2m
+  repeat_interval: 2h
+
+  routes:
+    - match:
+        severity: 'warning'
+      receiver: 'slack-warning'
+      continue: true
+
+    - match:
+        severity: 'critical'
+      receiver: 'critical-multichannel'
+      continue: true
+
+    - match:
+        alertname: 'BlackboxProbeFailed'
+      receiver: 'email-escalation'
+      continue: true
+
+    - match:
+        alertname: 'LokiErrorSpike'
+      receiver: 'slack-warning'
+      continue: true
+
+    - match:
+        alertname: 'TraefikHigh5xxRate'
+      receiver: 'slack-warning'
+      continue: true
+
+    # ---------------- AUTOHEAL ----------------
+    - match:
+        alertname: 'PredictoraBackendDown'
+      receiver: 'autoheal-webhook'
+      continue: true
+
+receivers:
+  - name: 'default'
+    slack_configs:
+      - channel: '#monitoring'
+        send_resolved: true
+        api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
+
+  - name: 'slack-warning'
+    slack_configs:
+      - channel: '#monitoring'
+        send_resolved: true
+        api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
+        title: "⚠️ WARNING: {{ .CommonLabels.alertname }}"
+        text: "Instance: {{ .CommonLabels.instance }}\nDetails: {{ .CommonAnnotations.description }}"
+
+  - name: 'critical-multichannel'
+    slack_configs:
+      - channel: '#monitoring-critical'
+        send_resolved: true
+        api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK'
+        title: "🔥 CRITICAL ALERT: {{ .CommonLabels.alertname }}"
+        text: "Instance: {{ .CommonLabels.instance }}\nDetails: {{ .CommonAnnotations.description }}"
+
+    telegram_configs:
+      - bot_token: 'YOUR_TELEGRAM_BOT_TOKEN'
+        chat_id: 123456789
+        send_resolved: true
+        message: |
+          🔥 *CRITICAL ALERT*
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Instance:* {{ .CommonLabels.instance }}
+          *Details:* {{ .CommonAnnotations.description }}
+
+  - name: 'email-escalation'
+    email_configs:
+      - to: 'oncall@predictora.ai'
+        send_resolved: true
+        headers:
+          Subject: "🔥 CRITICAL ESCALATION: {{ .CommonLabels.alertname }}"
+        html: "<b>Instance:</b> {{ .CommonLabels.instance }}<br><b>Details:</b> {{ .CommonAnnotations.description }}"
+
+  # ---------------- AUTOHEAL RECEIVER ----------------
+  - name: 'autoheal-webhook'
+    webhook_configs:
+      - url: "http://autoheal-worker:5000/alert"
+        send_resolved: true

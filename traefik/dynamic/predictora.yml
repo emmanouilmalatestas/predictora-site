@@ -1,0 +1,28 @@
+http:
+  routers:
+    predictora-frontend:
+      rule: Host(`predictoraai.com`) || Host(`www.predictoraai.com`)
+      service: predictora-frontend-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+    predictora-backend:
+      rule: Host(`api.predictoraai.com`)
+      service: predictora-backend-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    predictora-frontend-service:
+      loadBalancer:
+        servers:
+          - url: "http://predictoraai-frontend:3000"
+
+    predictora-backend-service:
+      loadBalancer:
+        servers:
+          - url: "http://predictora-backend:8000"

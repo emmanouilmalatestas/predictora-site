@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    command:
+      - "--providers.file.directory=/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@predictoraai.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/home/deploy/predictoraai/traefik/dynamic:/dynamic"
+      - "/home/deploy/predictoraai/traefik/letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  predictora-backend:
+    build: ./backend
+    container_name: predictora-backend
+    restart: always
+    expose:
+      - "8000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.predictora-backend.rule=Host(`api.predictoraai.com`)"
+      - "traefik.http.routers.predictora-backend.entrypoints=websecure"
+      - "traefik.http.routers.predictora-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.predictora-backend.loadbalancer.server.port=8000"
+
+  predictoraai-frontend:
+    build: ./backend/app/frontend
+    image: predictoraai-predictoraai-frontend:latest
+    container_name: predictoraai-frontend
+    restart: always
+    expose:
+      - "3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.predictora-frontend.rule=Host(`predictoraai.com`) || Host(`www.predictoraai.com`)"
+      - "traefik.http.routers.predictora-frontend.entrypoints=websecure"
+      - "traefik.http.routers.predictora-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.predictora-frontend.loadbalancer.server.port=3000"
+

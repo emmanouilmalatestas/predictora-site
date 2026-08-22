@@ -1,0 +1,119 @@
+services:
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    command:
+      - "--providers.file.directory=/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@predictoraai.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/home/deploy/predictoraai/traefik/dynamic:/dynamic"
+      - "/home/deploy/predictoraai/traefik/letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  predictora-backend:
+    build: ./backend
+    container_name: predictora-backend
+    restart: always
+    expose:
+      - "8000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.predictora-backend.rule=Host(`api.predictoraai.com`)"
+      - "traefik.http.routers.predictora-backend.entrypoints=websecure"
+      - "traefik.http.routers.predictora-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.predictora-backend.loadbalancer.server.port=8000"
+
+  predictoraai-frontend:
+    build: ./backend/app/frontend
+    container_name: predictoraai-frontend
+    restart: always
+    expose:
+      - "3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.predictora-frontend.rule=Host(`predictoraai.com`) || Host(`www.predictoraai.com`)"
+      - "traefik.http.routers.predictora-frontend.entrypoints=websecure"
+      - "traefik.http.routers.predictora-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.predictora-frontend.loadbalancer.server.port=3000"
+
+  predictora-ui:
+    build: ./ui/policy-dashboard
+    container_name: predictora-ui
+    restart: always
+    expose:
+      - "80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.predictora-ui.rule=Host(`ui.predictoraai.com`)"
+      - "traefik.http.routers.predictora-ui.entrypoints=websecure"
+      - "traefik.http.routers.predictora-ui.tls.certresolver=letsencrypt"
+      - "traefik.http.services.predictora-ui.loadbalancer.server.port=80"
+
+  predictoraai-admin-frontend:
+    build: ./backend/app/admin-frontend
+    container_name: predictoraai-admin-frontend
+    restart: always
+    expose:
+      - "3001"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.predictora-admin.rule=Host(`admin.predictoraai.com`)"
+      - "traefik.http.routers.predictora-admin.entrypoints=websecure"
+      - "traefik.http.routers.predictora-admin.tls.certresolver=letsencrypt"
+      - "traefik.http.services.predictora-admin.loadbalancer.server.port=3001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  stripe-webhook:
+    build: ./backend/stripe-webhook
+    container_name: predictoraai-stripe-webhook
+    restart: always
+    expose:
+      - "3002"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stripe-webhook.rule=Host(`webhook.predictoraai.com`)"
+      - "traefik.http.routers.stripe-webhook.entrypoints=websecure"
+      - "traefik.http.routers.stripe-webhook.tls.certresolver=letsencrypt"
+      - "traefik.http.services.stripe-webhook.loadbalancer.server.port=3002"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  predictoraai-db:
+    image: postgres:16
+    container_name: predictoraai-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: predictora
+    volumes:
+      - predictoraai_pgdata:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  predictoraai_pgdata:

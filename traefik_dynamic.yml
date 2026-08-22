@@ -1,0 +1,42 @@
+http:
+  routers:
+    frontend:
+      rule: "Host(`predictoraai.com`) || Host(`www.predictoraai.com`)"
+      entryPoints: ["websecure"]
+      tls:
+        certResolver: "letsencrypt"
+      service: "frontend-service"
+
+    admin:
+      rule: "Host(`admin.predictoraai.com`)"
+      entryPoints: ["websecure"]
+      tls:
+        certResolver: "letsencrypt"
+      service: "admin-service"
+
+    backend:
+      rule: "Host(`api.predictoraai.com`)"
+      entryPoints: ["websecure"]
+      tls:
+        certResolver: "letsencrypt"
+      service: "backend-service"
+
+  services:
+    frontend-service:
+      loadBalancer:
+        servers:
+          - url: "http://predictoraai-frontend:3000"
+
+    admin-service:
+      loadBalancer:
+        servers:
+          - url: "http://predictoraai-admin-frontend:3000"
+
+    backend-service:
+      loadBalancer:
+        healthCheck:
+          path: "/health"
+          interval: "5s"
+          timeout: "3s"
+        servers:
+          - url: "http://predictora-backend:8000"

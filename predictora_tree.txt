@@ -1,0 +1,581 @@
+/home/deploy/predictoraai
+├── alertmanager.yml
+├── apps
+│   ├── admin
+│   │   ├── app
+│   │   ├── Dockerfile
+│   │   ├── next.config.mjs
+│   │   ├── next-env.d.ts
+│   │   ├── node_modules
+│   │   ├── package.json
+│   │   ├── package-lock.json
+│   │   └── tsconfig.json
+│   └── client
+│       ├── AGENTS.md
+│       ├── app
+│       ├── CLAUDE.md
+│       ├── Dockerfile
+│       ├── eslint.config.mjs
+│       ├── next.config.js
+│       ├── next.config.mjs
+│       ├── next.config.ts
+│       ├── next-env.d.ts
+│       ├── node_modules
+│       ├── out
+│       ├── package.json
+│       ├── package-lock.json
+│       ├── postcss.config.js
+│       ├── postcss.config.mjs
+│       ├── public
+│       ├── README.md
+│       ├── styles
+│       ├── tailwind.config.js
+│       └── tsconfig.json
+├── backend
+│   ├── api_keys.py
+│   ├── app
+│   │   ├── alert_engine
+│   │   ├── api
+│   │   ├── app
+│   │   ├── audit
+│   │   ├── backend_alembic_init.sh
+│   │   ├── decision_engine
+│   │   ├── forecast_engine
+│   │   ├── main.py
+│   │   ├── middleware
+│   │   ├── models
+│   │   ├── monitoring.py
+│   │   ├── prediction_engine
+│   │   ├── rate_limit
+│   │   ├── risk_engine
+│   │   ├── scenario_engine
+│   │   ├── services
+│   │   └── tests
+│   ├── auth_pkg
+│   │   ├── __init__.py
+│   │   └── routes.py
+│   ├── backend-deployment-dev.yaml
+│   ├── backend-deployment-prod.yaml
+│   ├── backend-deployment-staging.yaml
+│   ├── backend-deployment.yaml
+│   ├── backend-secrets-dev.yaml
+│   ├── backend-secrets-prod.yaml
+│   ├── backend-secrets-staging.yaml
+│   ├── backend-secrets.yaml
+│   ├── billing_db_and_portal.py
+│   ├── billing_engine.py
+│   ├── deployment.yaml
+│   ├── Dockerfile
+│   ├── event-bus
+│   │   ├── Dockerfile
+│   │   ├── main.py
+│   │   └── requirements.txt
+│   ├── fix_backend_structure.sh
+│   ├── frontend
+│   │   ├── Dockerfile
+│   │   ├── package.json
+│   │   └── pages
+│   ├── infinity
+│   │   └── infinity_brain_v3.py
+│   ├── __init__.py
+│   ├── k8s
+│   │   ├── dev
+│   │   ├── prod
+│   │   └── staging
+│   ├── main.py
+│   ├── metering
+│   │   ├── Dockerfile
+│   │   ├── main.py
+│   │   └── requirements.txt
+│   ├── monitoring.py
+│   ├── performance_tuned_app.py
+│   ├── predictoraai-secrets.yaml
+│   ├── predictora_monolith.py
+│   ├── __pycache__
+│   │   ├── billing_db_and_portal.cpython-314.pyc
+│   │   ├── __init__.cpython-314.pyc
+│   │   └── main.cpython-314.pyc
+│   ├── ratelimit_async_test.py
+│   ├── rate_limit.py
+│   ├── ratelimit_test.sh
+│   ├── requirements_revenue.txt
+│   ├── requirements.txt
+│   ├── revenue_exporter.Dockerfile
+│   ├── revenue_exporter.py
+│   ├── run_backend_dev.sh
+│   ├── scripts
+│   │   └── security_model_todo.md
+│   ├── setup_backend_infra.sh
+│   ├── setup_predictora_infra.sh
+│   ├── src
+│   │   ├── admin
+│   │   ├── audit
+│   │   ├── dashboard
+│   │   ├── decision_engine
+│   │   ├── events
+│   │   ├── main.py
+│   │   ├── models
+│   │   ├── rbac
+│   │   ├── secure
+│   │   ├── security
+│   │   ├── sessions
+│   │   └── tasks
+│   ├── stripe_webhook.py
+│   ├── usage_engine.py
+│   ├── usage_migrations.sql
+│   ├── validate_api_key.py
+│   ├── venv
+│   │   ├── bin
+│   │   ├── include
+│   │   ├── lib
+│   │   ├── lib64 -> lib
+│   │   └── pyvenv.cfg
+│   ├── webhook_app.py
+│   ├── webhook.Dockerfile
+│   └── workers
+│       ├── Dockerfile
+│       ├── requirements.txt
+│       └── worker.py
+├── backend.env
+├── backend.env.bak_hardened
+├── backup.sql
+├── billing_ledger_schema.sql
+├── billing_schema.sql
+├── billing_unicorn_e2e.sh
+├── compose_clean.yml
+├── coverage-badge.svg
+├── db
+│   ├── base
+│   │   ├── 1
+│   │   ├── 16476
+│   │   ├── 4
+│   │   └── 5
+│   ├── global
+│   │   ├── 1213
+│   │   ├── 1213_fsm
+│   │   ├── 1213_vm
+│   │   ├── 1214
+│   │   ├── 1232
+│   │   ├── 1233
+│   │   ├── 1260
+│   │   ├── 1260_fsm
+│   │   ├── 1260_vm
+│   │   ├── 1261
+│   │   ├── 1261_fsm
+│   │   ├── 1261_vm
+│   │   ├── 1262
+│   │   ├── 1262_fsm
+│   │   ├── 1262_vm
+│   │   ├── 2396
+│   │   ├── 2396_fsm
+│   │   ├── 2396_vm
+│   │   ├── 2397
+│   │   ├── 2671
+│   │   ├── 2672
+│   │   ├── 2676
+│   │   ├── 2677
+│   │   ├── 2694
+│   │   ├── 2695
+│   │   ├── 2697
+│   │   ├── 2698
+│   │   ├── 2846
+│   │   ├── 2847
+│   │   ├── 2964
+│   │   ├── 2965
+│   │   ├── 2966
+│   │   ├── 2967
+│   │   ├── 3592
+│   │   ├── 3593
+│   │   ├── 4060
+│   │   ├── 4061
+│   │   ├── 4175
+│   │   ├── 4176
+│   │   ├── 4177
+│   │   ├── 4178
+│   │   ├── 4181
+│   │   ├── 4182
+│   │   ├── 4183
+│   │   ├── 4184
+│   │   ├── 4185
+│   │   ├── 4186
+│   │   ├── 6000
+│   │   ├── 6001
+│   │   ├── 6002
+│   │   ├── 6100
+│   │   ├── 6114
+│   │   ├── 6115
+│   │   ├── 6243
+│   │   ├── 6244
+│   │   ├── 6245
+│   │   ├── 6246
+│   │   ├── 6247
+│   │   ├── pg_control
+│   │   ├── pg_filenode.map
+│   │   └── pg_internal.init
+│   ├── pg_commit_ts
+│   ├── pg_dynshmem
+│   ├── pg_hba.conf
+│   ├── pg_ident.conf
+│   ├── pg_logical
+│   │   ├── mappings
+│   │   ├── replorigin_checkpoint
+│   │   └── snapshots
+│   ├── pg_multixact
+│   │   ├── members
+│   │   └── offsets
+│   ├── pg_notify
+│   ├── pg_replslot
+│   ├── pg_serial
+│   ├── pg_snapshots
+│   ├── pg_stat
+│   │   └── pgstat.stat
+│   ├── pg_stat_tmp
+│   ├── pg_subtrans
+│   │   └── 0000
+│   ├── pg_tblspc
+│   ├── pg_twophase
+│   ├── PG_VERSION
+│   ├── pg_wal
+│   │   ├── 000000010000000000000001
+│   │   └── archive_status
+│   ├── pg_xact
+│   │   └── 0000
+│   ├── postgresql.auto.conf
+│   ├── postgresql.conf
+│   └── postmaster.opts
+├── deploy_safe.sh
+├── DeveloperPortal.jsx
+├── docker-compose.monitoring.yml
+├── docker-compose.prod.yml
+├── docker-compose.prod.yml.save
+├── docker-compose.yml.disabled
+├── docker-compose.yml.disabled2
+├── dynamic.yml
+├── full_cleanup.sh
+├── grafana
+│   ├── alerting
+│   │   └── 1
+│   ├── csv
+│   ├── grafana.db
+│   ├── pdf
+│   ├── plugins
+│   └── png
+├── guardian.env
+├── infinity
+├── infra
+│   ├── admin
+│   │   └── admin_procedures
+│   ├── alertmanager
+│   │   └── alertmanager.yml
+│   ├── backend
+│   │   ├── deployment.yaml
+│   │   ├── Dockerfile
+│   │   ├── hpa.yaml
+│   │   ├── ingress.yaml
+│   │   ├── limitrange.yaml
+│   │   ├── middleware.yaml
+│   │   ├── networkpolicy.yaml
+│   │   ├── pdb.yaml
+│   │   ├── requirements.txt
+│   │   ├── resourcequota.yaml
+│   │   └── service.yaml
+│   ├── backups
+│   │   ├── backup.log
+│   │   └── db-backup.sh
+│   ├── cluster-warzone.yaml
+│   ├── db
+│   │   ├── 001_event_store.sql
+│   │   └── seed.sql
+│   ├── docker
+│   │   └── docker-compose.yml
+│   ├── monitoring
+│   │   ├── alertmanager
+│   │   ├── docker-compose.monitoring.yml
+│   │   ├── grafana
+│   │   ├── loki
+│   │   ├── prometheus
+│   │   └── promtail
+│   ├── openapi
+│   │   └── openapi.json
+│   ├── oracle
+│   │   └── oracle
+│   ├── scripts
+│   │   ├── admin
+│   │   ├── check_compose.sh
+│   │   ├── compose_backup_restore.sh
+│   │   ├── db
+│   │   ├── db_backup.sh
+│   │   ├── deploy_safe.sh
+│   │   ├── harden_project.sh
+│   │   ├── harden_traefik.sh
+│   │   ├── monitoring
+│   │   ├── setup
+│   │   ├── setup_observability.sh
+│   │   ├── traefik
+│   │   └── warzone
+│   ├── security
+│   │   └── apikeys.txt
+│   └── traefik
+├── letsencrypt
+│   ├── acme.json
+│   └── acme-letsencrypt.json
+├── Marketplace.jsx
+├── merged.yml
+├── monitoring
+│   ├── alertmanager.yml
+│   ├── alert-rules.yml
+│   ├── autoheal.sh
+│   ├── blackbox.yml
+│   ├── chaos_mode.sh
+│   ├── check_api_slos.sh
+│   ├── check_monitoring.sh
+│   ├── cloudflare_hardening.sh
+│   ├── cron_logs_dashboard.json
+│   ├── docker-compose.yml
+│   ├── failover_dns.sh
+│   ├── grafana
+│   │   ├── alerting
+│   │   ├── csv
+│   │   ├── dashboards
+│   │   ├── grafana.db
+│   │   ├── pdf
+│   │   ├── plugins
+│   │   ├── png
+│   │   └── provisioning
+│   ├── grafana-config
+│   │   ├── api_synthetics_dashboard.json
+│   │   ├── backup_20260613_070729
+│   │   ├── business_impact_dashboard.json
+│   │   ├── grafana.ini
+│   │   ├── model_drift_dashboard.json
+│   │   ├── provisioning
+│   │   ├── reliability_console_dashboard.json
+│   │   ├── reliability_score_dashboard.json
+│   │   └── slo_burn_dashboard.json
+│   ├── guardian_v2.sh
+│   ├── load_engine.sh
+│   ├── loki
+│   │   ├── local-config.yaml
+│   │   └── loki-config.yml
+│   ├── loki-config.yml
+│   ├── loki_logs.json
+│   ├── monitoring_warzone.sh
+│   ├── monitoring.yml
+│   ├── node_exporter.json
+│   ├── predictoraai_warzone.json
+│   ├── predictora_grafana_reliability_pack.sh
+│   ├── predictora_monitoring_upgrade.sh
+│   ├── predictora_reliability_upgrade.sh
+│   ├── prometheus
+│   │   ├── 01KVANE9D4487ZGBDGCV2VYEMJ
+│   │   ├── 01KVFZBE7K14G9JQ91X1A5V041
+│   │   ├── 01KVJ3YG90R3YDK7HKYG7SZ8MR
+│   │   ├── 01KVMKXA7EBVPE8H359A6PD0X2
+│   │   ├── 01KVQA502SCK6TGX20XSG3C0TR
+│   │   ├── 01KVQA505QSBPSD5VFKNKH8CZX
+│   │   ├── 01KVQQDQ84BBTFZRBFQSPT1K51
+│   │   ├── 01KVQQDQ9VPGY82QF74RA5VZ1A
+│   │   ├── 01KVTQNDG422SZR1TPCZDNBNZH
+│   │   ├── chunks_head
+│   │   ├── lock
+│   │   ├── prometheus.yml
+│   │   ├── queries.active
+│   │   ├── rules
+│   │   └── wal
+│   ├── prometheus-rules
+│   ├── prometheus.yml
+│   ├── promtail
+│   │   ├── pipelines
+│   │   └── promtail-config.yml
+│   ├── promtail-config.yml
+│   ├── reliability_orchestrator.sh
+│   ├── revenue-exporter
+│   │   ├── Dockerfile
+│   │   ├── main.py
+│   │   └── requirements.txt
+│   ├── rollback_api.sh
+│   ├── rules
+│   ├── stage3_production_hardening.sh
+│   ├── stage4_waf_pack.sh
+│   ├── traefik
+│   │   ├── acme.json
+│   │   ├── dynamic_security.yml
+│   │   └── traefik.yml
+│   ├── traefik_dashboard.json
+│   ├── traefik_warzone.sh
+│   └── warzone-1000000-automation.sh -> /home/deploy/predictoraai/monitoring/warzone-10000-automation.sh
+├── postgres-data
+│   ├── base
+│   │   ├── 1
+│   │   ├── 16384
+│   │   ├── 4
+│   │   └── 5
+│   ├── global
+│   │   ├── 1213
+│   │   ├── 1213_fsm
+│   │   ├── 1213_vm
+│   │   ├── 1214
+│   │   ├── 1232
+│   │   ├── 1233
+│   │   ├── 1260
+│   │   ├── 1260_fsm
+│   │   ├── 1260_vm
+│   │   ├── 1261
+│   │   ├── 1261_fsm
+│   │   ├── 1261_vm
+│   │   ├── 1262
+│   │   ├── 1262_fsm
+│   │   ├── 1262_vm
+│   │   ├── 2396
+│   │   ├── 2396_fsm
+│   │   ├── 2396_vm
+│   │   ├── 2397
+│   │   ├── 2671
+│   │   ├── 2672
+│   │   ├── 2676
+│   │   ├── 2677
+│   │   ├── 2694
+│   │   ├── 2695
+│   │   ├── 2697
+│   │   ├── 2698
+│   │   ├── 2846
+│   │   ├── 2847
+│   │   ├── 2964
+│   │   ├── 2965
+│   │   ├── 2966
+│   │   ├── 2967
+│   │   ├── 3592
+│   │   ├── 3593
+│   │   ├── 4060
+│   │   ├── 4061
+│   │   ├── 4175
+│   │   ├── 4176
+│   │   ├── 4177
+│   │   ├── 4178
+│   │   ├── 4181
+│   │   ├── 4182
+│   │   ├── 4183
+│   │   ├── 4184
+│   │   ├── 4185
+│   │   ├── 4186
+│   │   ├── 6000
+│   │   ├── 6001
+│   │   ├── 6002
+│   │   ├── 6100
+│   │   ├── 6114
+│   │   ├── 6115
+│   │   ├── 6243
+│   │   ├── 6244
+│   │   ├── 6245
+│   │   ├── 6246
+│   │   ├── 6247
+│   │   ├── pg_control
+│   │   ├── pg_filenode.map
+│   │   └── pg_internal.init
+│   ├── pg_commit_ts
+│   ├── pg_dynshmem
+│   ├── pg_hba.conf
+│   ├── pg_ident.conf
+│   ├── pg_logical
+│   │   ├── mappings
+│   │   ├── replorigin_checkpoint
+│   │   └── snapshots
+│   ├── pg_multixact
+│   │   ├── members
+│   │   └── offsets
+│   ├── pg_notify
+│   ├── pg_replslot
+│   ├── pg_serial
+│   ├── pg_snapshots
+│   ├── pg_stat
+│   ├── pg_stat_tmp
+│   ├── pg_subtrans
+│   │   └── 0000
+│   ├── pg_tblspc
+│   ├── pg_twophase
+│   ├── PG_VERSION
+│   ├── pg_wal
+│   │   ├── 000000010000000000000001
+│   │   └── archive_status
+│   ├── pg_xact
+│   │   └── 0000
+│   ├── postgresql.auto.conf
+│   ├── postgresql.conf
+│   ├── postmaster.opts
+│   └── postmaster.pid
+├── predictora-billing
+│   ├── admin.py
+│   ├── billing_api.py
+│   ├── billing.py
+│   ├── billing_unicorn_engine.py
+│   ├── cron_revenue.sh
+│   ├── db.py
+│   ├── Dockerfile
+│   ├── ledger_engine.py
+│   ├── ledger.py
+│   ├── main.py
+│   ├── models.py
+│   ├── __pycache__
+│   │   ├── billing.cpython-314.pyc
+│   │   ├── db.cpython-314.pyc
+│   │   ├── main.cpython-314.pyc
+│   │   ├── models.cpython-314.pyc
+│   │   ├── usage_queue.cpython-314.pyc
+│   │   └── webhooks.cpython-314.pyc
+│   ├── requirements.txt
+│   ├── status.py
+│   ├── stripe_meter_sync.py
+│   ├── usage_queue.py
+│   ├── usage_writer.py
+│   ├── version.py
+│   └── webhooks.py
+├── predictora_tree.txt
+├── prometheus.yml
+├── promtail-config.yml
+├── provision_dashboards.sh
+├── provision_predictora_dual_token.sh
+├── provision_predictora_observability.sh
+├── README.md
+├── scripts
+│   ├── add-healthchecks.sh
+│   ├── billing_validation.sh
+│   ├── redeploy_billing.sh
+│   ├── redeploy_core.sh
+│   └── unicorn_payments_bootstrap.sh
+├── services
+│   ├── event-bus
+│   │   └── event-bus
+│   ├── metering
+│   │   └── metering
+│   ├── webhook
+│   │   ├── Dockerfile
+│   │   ├── main.py
+│   │   └── requirements.txt
+│   └── workers
+│       └── workers
+├── setup_infra.log
+├── setup_infra.sh
+├── stripe_bootstrap_predictora.sh
+├── stripe.deb
+├── stripe-healthcheck.py
+├── stripe-healthcheck-v2.py
+├── stripe-sync.sh
+├── stripe.tar.gz
+├── traefik
+│   ├── dynamic
+│   │   ├── dashboard.yml
+│   │   ├── redirect.yml
+│   │   ├── security.yml
+│   │   └── tls.yml
+│   ├── letsencrypt
+│   │   └── acme.json
+│   └── traefik.yml
+├── traefik_dynamic.yml
+├── traefik_static.yml
+├── warzone-autonomous.log
+├── warzone-metrics
+│   └── guardian.prom
+└── webhook
+    └── app
+
+196 directories, 383 files

@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  # Traefik Metrics
+  - job_name: 'traefik'
+    scheme: https
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['traefik.predictoraai.com']
+    tls_config:
+      insecure_skip_verify: true
+
+  # Backend API Metrics (αν έχεις /metrics)
+  - job_name: 'predictoraai-backend'
+    scheme: https
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['api.predictoraai.com']
+    tls_config:
+      insecure_skip_verify: true
+
+  # Revenue Exporter
+  - job_name: 'revenue-exporter'
+    scheme: http
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['predictoraai-revenue-exporter:8000']

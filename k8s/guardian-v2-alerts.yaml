@@ -1,0 +1,37 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: guardian-v2-rules
+  labels:
+    prometheus: k8s
+    role: alert-rules
+spec:
+  groups:
+    - name: guardian-v2.rules
+      rules:
+        - alert: GuardianBackendDown
+          expr: guardian_backend_up == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Predictora backend DOWN"
+            description: "Guardian-v2 reports backend down for more than 1 minute."
+
+        - alert: GuardianSelfHealthFail
+          expr: guardian_self_health == 0
+          for: 30s
+          labels:
+            severity: warning
+          annotations:
+            summary: "Guardian self-health failed"
+            description: "Guardian-v2 cannot resolve Prometheus or network is failing."
+
+        - alert: GuardianRateLimited
+          expr: guardian_rate_limit > 0
+          for: 10s
+          labels:
+            severity: warning
+          annotations:
+            summary: "Guardian restart rate limit triggered"
+            description: "Too many restarts in short time window."

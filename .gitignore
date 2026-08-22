@@ -1,0 +1,38 @@
+# Artifacts
+backend/
+services/
+monitoring/
+db/
+postgres-data/
+node_modules/
+ui/
+infinity/
+grafana/
+orchestrator-logs/
+warzone-metrics/
+website/
+disabled_compose/
+backend_flat.tar
+backend-flat.tar
+backend.tar
+backup.sql
+context_dump.tar
+stripe.tar.gz
+
+# Dumps / binaries
+*.tar
+*.tar.gz
+*.zip
+*.log
+*.db
+*.sql
+*.sqlite
+*.deb
+*.tmp
+*.cache
+
+# Sensitive
+kubeconfig
+infra/security/apikeys.txt
+letsencrypt/acme.json
+letsencrypt/acme-letsencrypt.json

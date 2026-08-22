@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guardian-v2
+  labels:
+    app: guardian-v2
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: guardian-v2
+  template:
+    metadata:
+      labels:
+        app: guardian-v2
+    spec:
+      serviceAccountName: guardian-v2
+      containers:
+        - name: guardian-v2
+          image: localhost:5000/guardian-v2:latest
+          imagePullPolicy: Always
+
+          volumeMounts:
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+
+          env:
+            - name: PROM
+              value: "http://prometheus:9090"
+            - name: LOKI
+              value: "http://loki:3100/loki/api/v1/push"
+            - name: PUSH
+              value: "http://pushgateway:9091/metrics/job/guardian_v2"
+            - name: TELEGRAM_TOKEN
+              value: "8791478475:AAFtHlA7Q7Wn8gwAPcNBPSA0q_YV2GqFKuk"
+            - name: TELEGRAM_CHAT_ID
+              value: "7747676404"
+
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+
+          readinessProbe:
+            exec:
+              command: ["python", "-c", "print('ready')"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket

@@ -1,0 +1,280 @@
+version: "3.9"
+
+services:
+
+  predictora-redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    env_file:
+      - ./.env
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend_internal
+
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    env_file:
+      - ./.env
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.traefik.rule: "Host(`traefik.predictoraai.com`)"
+      traefik.http.routers.traefik.entrypoints: "websecure"
+      traefik.http.routers.traefik.tls.certresolver: "letsencrypt"
+      traefik.http.services.traefik.loadbalancer.server.port: "8080"
+      traefik.http.routers.http-catchall.rule: "HostRegexp(`{any:.*}`)"
+      traefik.http.routers.http-catchall.entrypoints: "web"
+      traefik.http.routers.http-catchall.middlewares: "redirect-to-https@file"
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.filename=/etc/traefik/traefik_dynamic.yml"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=emmanouilmalatestas@gmail.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--accesslog=true"
+      - "--accesslog.format=json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik_dynamic.yml:/etc/traefik/traefik_dynamic.yml"
+      - "./letsencrypt:/letsencrypt"
+    restart: always
+    networks:
+      - default
+      - backend_internal
+
+  predictora-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: predictoraai-backend:prod
+    container_name: predictora-backend
+    env_file:
+      - ./.env
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.backend.rule: "Host(`api.predictoraai.com`) && PathPrefix(`/`)"
+      traefik.http.routers.backend.entrypoints: "websecure"
+      traefik.http.routers.backend.tls.certresolver: "letsencrypt"
+      traefik.http.routers.backend.priority: "10"
+      traefik.http.services.backend.loadbalancer.server.port: "8000"
+      traefik.http.routers.backend.middlewares: "security-headers@file,rate-limit@file,jwt-verify@file"
+    restart: always
+    networks:
+      - default
+      - backend_internal
+    ports:
+      - "8000:8000"
+
+  predictoraai-frontend:
+    build:
+      context: ./apps/client
+      dockerfile: Dockerfile
+    image: predictoraai-frontend:latest
+    container_name: predictoraai-frontend
+    env_file:
+      - ./.env
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.frontend.rule: "Host(`predictoraai.com`) || Host(`www.predictoraai.com`)"
+      traefik.http.routers.frontend.entrypoints: "websecure"
+      traefik.http.routers.frontend.tls.certresolver: "letsencrypt"
+      traefik.http.services.frontend.loadbalancer.server.port: "3000"
+      traefik.http.routers.frontend.middlewares: "security-headers@file,rate-limit@file"
+    networks:
+      - default
+      - backend_internal
+    restart: always
+
+  predictoraai-admin-frontend:
+    build:
+      context: ./apps/admin
+      dockerfile: Dockerfile
+    image: predictoraai-admin-frontend:latest
+    container_name: predictoraai-admin-frontend
+    env_file:
+      - ./.env
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.admin.rule: "Host(`admin.predictoraai.com`)"
+      traefik.http.routers.admin.entrypoints: "websecure"
+      traefik.http.routers.admin.tls.certresolver: "letsencrypt"
+      traefik.http.services.admin.loadbalancer.server.port: "3000"
+      traefik.http.routers.admin.middlewares: "security-headers@file,rate-limit@file"
+    networks:
+      - default
+      - backend_internal
+    restart: always
+
+  predictoraai-stripe-webhook:
+    build:
+      context: ./services/webhook
+      dockerfile: Dockerfile
+    image: predictoraai-stripe-webhook:latest
+    container_name: predictoraai-stripe-webhook
+    env_file:
+      - ./.env
+    restart: always
+    networks:
+      - default
+      - backend_internal
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.webhook.rule: "Host(`webhook.predictoraai.com`) && PathPrefix(`/stripe/webhook`)"
+      traefik.http.routers.webhook.entrypoints: "websecure"
+      traefik.http.routers.webhook.tls.certresolver: "letsencrypt"
+      traefik.http.services.webhook.loadbalancer.server.port: "8000"
+      traefik.http.routers.webhook.middlewares: "security-headers@file,rate-limit@file"
+
+  predictora-billing:
+    build:
+      context: ./predictora-billing
+    container_name: predictora-billing
+    env_file:
+      - ./.env
+    networks:
+      - default
+      - backend_internal
+    restart: always
+    depends_on:
+      - predictoraai-db
+      - predictora-redis
+    ports:
+      - "8010:8010"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.billing.rule: "Host(`api.predictoraai.com`) && PathPrefix(`/billing`)"
+      traefik.http.routers.billing.entrypoints: "websecure"
+      traefik.http.routers.billing.priority: "100"
+      traefik.http.routers.billing.tls.certresolver: "letsencrypt"
+      traefik.http.services.billing.loadbalancer.server.port: "8010"
+
+  predictoraai-revenue-exporter:
+    build:
+      context: ./monitoring/revenue-exporter
+      dockerfile: Dockerfile
+    image: predictoraai-revenue-exporter:latest
+    container_name: predictoraai-revenue-exporter
+    env_file:
+      - ./.env
+    restart: always
+    ports:
+      - "9106:8000"
+
+  predictoraai-db:
+    image: postgres:15
+    container_name: predictoraai-db
+    env_file:
+      - ./.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - backend_internal
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    env_file:
+      - ./.env
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus:/prometheus
+    restart: always
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox-exporter
+    env_file:
+      - ./.env
+    ports:
+      - "9115:9115"
+    restart: always
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    env_file:
+      - ./.env
+    ports:
+      - "8081:8080"
+    restart: always
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    env_file:
+      - ./.env
+    restart: always
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: loki
+    env_file:
+      - ./.env
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki-data:/loki
+    restart: always
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: promtail
+    env_file:
+      - ./.env
+    volumes:
+      - /var/log:/var/log
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    restart: always
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    env_file:
+      - ./.env
+    ports:
+      - "9093:9093"
+    restart: always
+
+  guardian:
+    build:
+      context: ./services/workers/workers
+      dockerfile: Dockerfile
+    image: predictoraai-guardian:prod
+    container_name: guardian
+    env_file:
+      - ./.env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+
+volumes:
+  db-data:
+  prometheus-data:
+  loki-data:
+  redis_data:
+
+networks:
+  default:
+    external: true
+    name: predictoraai_default
+
+  backend_internal:
+    driver: bridge
