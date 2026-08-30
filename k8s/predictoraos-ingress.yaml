@@ -1,0 +1,64 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: predictoraos
+  namespace: predictora
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+    traefik.ingress.kubernetes.io/router.middlewares: predictora-predictoraos-ratelimit@kubernetescrd,predictora-predictoraos-whitelist@kubernetescrd,predictora-predictoraos-jwt@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: api.predictora.ai
+      http:
+        paths:
+          - path: /readyz
+            pathType: Prefix
+            backend:
+              service:
+                name: predictoraos
+                port:
+                  number: 8080
+
+          - path: /healthz
+            pathType: Prefix
+            backend:
+              service:
+                name: predictoraos
+                port:
+                  number: 8080
+
+          - path: /metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: predictoraos
+                port:
+                  number: 9090
+
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: predictoraos
+                port:
+                  number: 8080
+
+    - host: runtime.predictora.ai
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: predictoraos
+                port:
+                  number: 8100
+
+  tls:
+    - hosts:
+        - api.predictora.ai
+        - runtime.predictora.ai
+      secretName: predictoraos-tls
